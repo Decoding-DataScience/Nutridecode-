@@ -30,6 +30,7 @@ import ScrollProgress from './components/ScrollProgress';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import ScanPage from './pages/Scan';
+import Results from './pages/Results';
 import ProtectedRoute from './components/ProtectedRoute';
 import { supabase } from './lib/supabase';
 
@@ -654,6 +655,14 @@ function App() {
         element={
           <ProtectedRoute>
             <ScanPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/results"
+        element={
+          <ProtectedRoute>
+            <Results />
           </ProtectedRoute>
         }
       />
