@@ -31,13 +31,30 @@ export interface AnalysisResult {
   };
   nutritionalInfo: {
     servingSize: string;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fats: number;
-    sugar: number;
-    vitamins: Record<string, string>;
-    minerals: Record<string, string>;
+    perServing: {
+      calories: number;
+      protein: number;
+      carbs: number;
+      fats: {
+        total: number;
+        saturated: number;
+      };
+      sugar: number;
+      salt: number;
+      omega3: number;
+    };
+    per100g: {
+      calories: number;
+      protein: number;
+      carbs: number;
+      fats: {
+        total: number;
+        saturated: number;
+      };
+      sugar: number;
+      salt: number;
+      omega3: number;
+    };
   };
   healthClaims: string[];
   packaging: {
@@ -46,16 +63,21 @@ export interface AnalysisResult {
     sustainabilityClaims: string[];
     certifications: string[];
   };
-  alternatives: {
-    healthier: string[];
-    sustainable: string[];
+  storage: {
+    instructions: string[];
+    bestBefore: string;
+  };
+  manufacturer: {
+    name: string;
+    address: string;
+    contact: string;
   };
 }
 
 export async function analyzeFoodLabel(imageBase64: string): Promise<AnalysisResult> {
   const startTime = Date.now();
   const temperature = 0.1; // Set fixed temperature for consistent results
-  const model = "gpt-4-1106-vision-preview"; // Updated to the latest vision model
+  const model = "gpt-4-turbo"; // Using GPT-4 model with vision support
   
   try {
     const base64Image = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
@@ -66,43 +88,72 @@ export async function analyzeFoodLabel(imageBase64: string): Promise<AnalysisRes
       messages: [
         {
           role: "system",
-          content: `You are a food label analysis expert. Analyze the food label image and extract ONLY information that is explicitly stated on the label. Format the response as a JSON object with the following structure:
+          content: `You are a food label analysis expert. Analyze the food label image and extract ONLY information that is explicitly stated on the label. Be extremely precise and thorough in your analysis. Format the response as a JSON object with the following structure:
           {
             "productName": "exact product name from label",
             "ingredients": {
-              "list": ["all ingredients in order"],
-              "preservatives": ["identified preservatives"],
-              "additives": ["identified additives"],
-              "antioxidants": ["identified antioxidants"],
+              "list": ["all ingredients with exact percentages as shown (e.g., 'Rapeseed oil (78%)')"],
+              "preservatives": ["identified preservatives with E-numbers and full names"],
+              "additives": ["identified additives with full names"],
+              "antioxidants": ["identified antioxidants with full chemical names"],
               "stabilizers": ["identified stabilizers"]
             },
             "allergens": {
-              "declared": ["explicitly declared allergens"],
+              "declared": ["explicitly declared allergens in CAPS"],
               "mayContain": ["may contain warnings"]
             },
             "nutritionalInfo": {
-              "servingSize": "stated serving size",
-              "calories": number,
-              "protein": number,
-              "carbs": number,
-              "fats": number,
-              "sugar": number,
-              "vitamins": {"vitamin": "amount"},
-              "minerals": {"mineral": "amount"}
+              "servingSize": "stated serving size with exact measurements",
+              "perServing": {
+                "calories": number,
+                "protein": number,
+                "carbs": number,
+                "fats": {
+                  "total": number,
+                  "saturated": number
+                },
+                "sugar": number,
+                "salt": number,
+                "omega3": number
+              },
+              "per100g": {
+                "calories": number,
+                "protein": number,
+                "carbs": number,
+                "fats": {
+                  "total": number,
+                  "saturated": number
+                },
+                "sugar": number,
+                "salt": number,
+                "omega3": number
+              }
             },
-            "healthClaims": ["health-related claims on packaging"],
+            "healthClaims": ["all health-related claims exactly as written"],
             "packaging": {
-              "materials": ["packaging materials listed"],
-              "recyclingInfo": "recycling instructions",
-              "sustainabilityClaims": ["sustainability claims"],
-              "certifications": ["certifications shown"]
+              "materials": ["packaging materials with specifications"],
+              "recyclingInfo": "complete recycling instructions",
+              "sustainabilityClaims": ["all sustainability claims exactly as written"],
+              "certifications": ["all certification marks and symbols shown"]
             },
-            "alternatives": {
-              "healthier": ["healthier alternatives based on ingredients"],
-              "sustainable": ["eco-friendly alternatives"]
+            "storage": {
+              "instructions": ["storage instructions exactly as written"],
+              "bestBefore": "exact date format as shown"
+            },
+            "manufacturer": {
+              "name": "company name",
+              "address": "full address as shown",
+              "contact": "contact information if provided"
             }
           }
-          IMPORTANT: Only include information that is explicitly shown on the label. Leave arrays empty if no information is provided.`
+          IMPORTANT: 
+          1. Capture ALL ingredients with their exact percentages when shown
+          2. Identify and classify preservatives, additives, and antioxidants
+          3. Maintain exact wording and numerical values as shown on the label
+          4. Include all percentages, measurements, and units exactly as displayed
+          5. Capture all certification marks, symbols, and recycling information
+          6. Note any specific dietary certifications (e.g., vegetarian, vegan)
+          7. Extract all health claims and sustainability statements verbatim`
         },
         {
           role: "user",
@@ -126,11 +177,20 @@ export async function analyzeFoodLabel(imageBase64: string): Promise<AnalysisRes
     });
 
     try {
-      const analysisResult = JSON.parse(response.choices[0].message.content);
+      const content = response.choices[0].message.content;
+      if (!content) {
+        console.error('Empty response content from OpenAI');
+        throw new Error('Empty response from OpenAI');
+      }
+      console.log('OpenAI Response:', content);
+      
+      const analysisResult = JSON.parse(content);
+      console.log('Parsed Analysis Result:', analysisResult);
+      
       const processingTimeMs = Date.now() - startTime;
 
       // Add metadata to the result
-      return {
+      const result = {
         ...analysisResult,
         metadata: {
           timestamp: new Date().toISOString(),
@@ -140,9 +200,13 @@ export async function analyzeFoodLabel(imageBase64: string): Promise<AnalysisRes
           processingTimeMs,
         }
       } as AnalysisResult;
-    } catch (parseError) {
+
+      console.log('Final Result:', result);
+      return result;
+    } catch (parseError: unknown) {
       console.error('Error parsing OpenAI response:', parseError);
-      throw new Error('Failed to parse analysis results');
+      console.error('Response content:', response.choices[0]?.message?.content);
+      throw new Error('Failed to parse analysis results: ' + (parseError instanceof Error ? parseError.message : String(parseError)));
     }
   } catch (error) {
     console.error('Error analyzing food label:', error);
