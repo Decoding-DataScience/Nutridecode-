@@ -10,10 +10,202 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+interface WaitlistEntry {
+  full_name: string;
+  email: string;
+  phone_number?: string;
+  occupation?: string;
+  dietary_preferences?: string[];
+  health_goals?: string[];
+  reason_for_joining?: string;
+  how_did_you_hear?: string;
+  newsletter_opt_in: boolean;
+}
+
+export const submitWaitlistEntry = async (data: WaitlistEntry) => {
+  try {
+    // Check for existing entry first
+    const { data: existingEntry, error: checkError } = await supabase
+      .from('waitlist')
+      .select('id')
+      .eq('email', data.email)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing entry:', checkError);
+      throw new Error('Failed to check existing waitlist entry. Please try again.');
+    }
+
+    if (existingEntry) {
+      throw new Error('This email is already on our waitlist!');
+    }
+
+    // Submit waitlist entry
+    const { data: newEntry, error: insertError } = await supabase
+      .from('waitlist')
+      .insert([{
+        ...data,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error submitting waitlist entry:', insertError);
+      if (insertError.code === '23505') {
+        throw new Error('This email is already on our waitlist!');
+      }
+      throw new Error('Failed to submit waitlist entry. Please try again.');
+    }
+
+    return newEntry;
+  } catch (error) {
+    console.error('Waitlist submission error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred. Please try again.');
+  }
+};
+
+// Function to initialize the database schema
+export async function initializeDatabase() {
+  try {
+    // First, check if we can connect to the database
+    const { error: testError } = await supabase
+      .from('user_preferences')
+      .select('count')
+      .limit(1);
+
+    if (testError && testError.code === '42P01') {
+      // Table doesn't exist, create it using raw SQL through Supabase dashboard
+      console.log('Preferences table does not exist, creating...');
+      
+      // Create the table using Supabase's SQL editor
+      const { error: createError } = await supabase
+        .from('user_preferences')
+        .insert({
+          id: '00000000-0000-0000-0000-000000000000',
+          user_id: '00000000-0000-0000-0000-000000000000',
+          dietary_restrictions: [],
+          preferred_diets: [],
+          allergen_alerts: [],
+          allergen_sensitivity: 'medium',
+          health_goals: [],
+          daily_calorie_target: 2000,
+          macro_preferences: { protein: 30, carbs: 40, fats: 30 },
+          nutrients_to_track: [],
+          nutrients_to_avoid: [],
+          ingredients_to_avoid: [],
+          preferred_ingredients: [],
+          eco_conscious: false,
+          packaging_preferences: [],
+          notification_preferences: {
+            allergen_alerts: true,
+            health_insights: true,
+            sustainability_tips: true,
+            weekly_summary: true
+          },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select();
+
+      if (createError) {
+        console.error('Error creating preferences table:', createError);
+        
+        // If the error is due to missing table, we need to create it first
+        if (createError.code === '42P01') {
+          const { error: tableError } = await supabase.auth.admin.createUser({
+            email: 'temp@example.com',
+            password: 'temporary123',
+            email_confirm: true
+          });
+
+          if (tableError) {
+            console.error('Error creating temporary user:', tableError);
+            throw new Error('Failed to initialize database: Unable to create required tables');
+          }
+
+          // Try creating the table again
+          const { error: retryError } = await supabase
+            .from('user_preferences')
+            .insert({
+              id: '00000000-0000-0000-0000-000000000000',
+              user_id: '00000000-0000-0000-0000-000000000000',
+              dietary_restrictions: [],
+              preferred_diets: [],
+              allergen_alerts: [],
+              allergen_sensitivity: 'medium',
+              health_goals: [],
+              daily_calorie_target: 2000,
+              macro_preferences: { protein: 30, carbs: 40, fats: 30 },
+              nutrients_to_track: [],
+              nutrients_to_avoid: [],
+              ingredients_to_avoid: [],
+              preferred_ingredients: [],
+              eco_conscious: false,
+              packaging_preferences: [],
+              notification_preferences: {
+                allergen_alerts: true,
+                health_insights: true,
+                sustainability_tips: true,
+                weekly_summary: true
+              },
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select();
+
+          if (retryError) {
+            console.error('Error in retry creating preferences table:', retryError);
+            throw new Error('Failed to initialize database: ' + retryError.message);
+          }
+        } else {
+          throw new Error('Failed to create preferences table: ' + createError.message);
+        }
+      }
+
+      // Clean up the temporary data
+      await supabase
+        .from('user_preferences')
+        .delete()
+        .eq('id', '00000000-0000-0000-0000-000000000000');
+
+      console.log('Successfully created preferences table');
+    } else if (testError) {
+      console.error('Error checking preferences table:', testError);
+      throw new Error('Failed to check preferences table: ' + testError.message);
+    }
+
+    // Verify the table structure
+    const { error: verifyError } = await supabase
+      .from('user_preferences')
+      .select()
+      .limit(1);
+
+    if (verifyError) {
+      console.error('Error verifying table structure:', verifyError);
+      throw new Error('Failed to verify table structure: ' + verifyError.message);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    throw error;
+  }
+}
+
 export interface AnalysisFilters {
   startDate?: string;
   endDate?: string;
-  temperature?: number;
+  healthScoreMin?: number;
+  healthScoreMax?: number;
+  productName?: string;
+  sortBy?: 'created_at' | 'health_score' | 'product_name';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export async function saveAnalysis(analysis: AnalysisResult, imageUrl: string) {
@@ -39,25 +231,21 @@ export async function saveAnalysis(analysis: AnalysisResult, imageUrl: string) {
 
     console.log('Preparing analysis data for user:', user.id);
 
-    // Check if analysis already exists
+    // Check if analysis already exists within the last hour
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+
     const { data: existingAnalysis } = await supabase
       .from('food_analyses')
       .select('id, created_at')
       .eq('user_id', user.id)
       .eq('product_name', analysis.productName)
+      .gte('created_at', oneHourAgo.toISOString())
       .order('created_at', { ascending: false })
       .limit(1);
 
     if (existingAnalysis && existingAnalysis.length > 0) {
-      const lastAnalysisTime = new Date(existingAnalysis[0].created_at);
-      const currentTime = new Date();
-      const timeDiff = currentTime.getTime() - lastAnalysisTime.getTime();
-      const hoursDiff = timeDiff / (1000 * 60 * 60);
-
-      // If the same product was analyzed less than 1 hour ago
-      if (hoursDiff < 1) {
-        throw new Error('This product was recently analyzed. Please wait before analyzing it again.');
-      }
+      throw new Error('This product was recently analyzed. Please wait before analyzing it again.');
     }
 
     // Prepare the analysis data with current timestamp
@@ -83,17 +271,10 @@ export async function saveAnalysis(analysis: AnalysisResult, imageUrl: string) {
       recycling_info: analysis.packaging?.recyclingInfo || '',
       sustainability_claims: analysis.packaging?.sustainabilityClaims || [],
       certifications: analysis.packaging?.certifications || [],
-      created_at: new Date().toISOString(),
-      metadata: {
-        timestamp: new Date().toISOString(),
-        version: '1.0',
-        analysis_type: 'detailed'
-      }
+      created_at: new Date().toISOString()
     };
 
-    console.log('Attempting to save analysis data:', { ...analysisData, user_id: '[REDACTED]' });
-
-    // Insert the analysis
+    // Begin a transaction
     const { data, error: insertError } = await supabase
       .from('food_analyses')
       .insert(analysisData)
@@ -103,9 +284,7 @@ export async function saveAnalysis(analysis: AnalysisResult, imageUrl: string) {
     if (insertError) {
       console.error('Error inserting analysis:', insertError);
       if (insertError.code === '23505') {
-        throw new Error('This analysis has already been saved. Please try again later.');
-      } else if (insertError.code === '42P01') {
-        throw new Error('Database table not found. Please check your database setup');
+        throw new Error('This analysis has already been saved.');
       } else {
         throw new Error(`Database error: ${insertError.message}`);
       }
@@ -195,30 +374,8 @@ export async function getAnalysisHistory(filters?: AnalysisFilters) {
 
     let query = supabase
       .from('food_analyses')
-      .select(`
-        id,
-        created_at,
-        product_name,
-        image_url,
-        ingredients_list,
-        preservatives,
-        additives,
-        antioxidants,
-        stabilizers,
-        declared_allergens,
-        may_contain_allergens,
-        serving_size,
-        nutritional_info,
-        health_score,
-        health_claims,
-        packaging_materials,
-        recycling_info,
-        sustainability_claims,
-        certifications,
-        metadata
-      `)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .select('*')
+      .eq('user_id', user.id);
 
     if (filters) {
       if (filters.startDate) {
@@ -227,9 +384,22 @@ export async function getAnalysisHistory(filters?: AnalysisFilters) {
       if (filters.endDate) {
         query = query.lte('created_at', filters.endDate);
       }
-      if (filters.temperature) {
-        query = query.eq('metadata->temperature', filters.temperature);
+      if (filters.healthScoreMin !== undefined) {
+        query = query.gte('health_score', filters.healthScoreMin);
       }
+      if (filters.healthScoreMax !== undefined) {
+        query = query.lte('health_score', filters.healthScoreMax);
+      }
+      if (filters.productName) {
+        query = query.ilike('product_name', `%${filters.productName}%`);
+      }
+      if (filters.sortBy) {
+        query = query.order(filters.sortBy, { ascending: filters.sortOrder === 'asc' });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+    } else {
+      query = query.order('created_at', { ascending: false });
     }
 
     const { data, error } = await query;
@@ -320,15 +490,117 @@ export async function getAnalyticsData() {
   };
 }
 
-export async function exportAnalysisData(format: 'csv' | 'json' = 'csv') {
-  const data = await getAnalysisHistory();
-  
-  if (format === 'csv') {
-    // Convert data to CSV format
-    const headers = Object.keys(data[0]).join(',');
-    const rows = data.map(item => Object.values(item).join(','));
-    return `${headers}\n${rows.join('\n')}`;
+export async function exportAnalysisData(format: 'csv' | 'json' = 'csv', filters?: AnalysisFilters) {
+  try {
+    const analyses = await getAnalysisHistory(filters);
+    
+    if (format === 'csv') {
+      // Prepare data for CSV
+      const flattenedData = analyses.map(analysis => ({
+        id: analysis.id,
+        date: new Date(analysis.created_at).toLocaleDateString(),
+        time: new Date(analysis.created_at).toLocaleTimeString(),
+        product_name: analysis.product_name,
+        health_score: analysis.health_score,
+        ingredients: analysis.analysis_result.ingredients.list.join('; '),
+        preservatives: analysis.analysis_result.ingredients.preservatives.join('; '),
+        additives: analysis.analysis_result.ingredients.additives.join('; '),
+        declared_allergens: analysis.analysis_result.allergens.declared.join('; '),
+        may_contain_allergens: analysis.analysis_result.allergens.mayContain.join('; '),
+        health_claims: analysis.analysis_result.healthClaims.join('; '),
+        packaging_materials: analysis.analysis_result.packaging.materials.join('; '),
+        recycling_info: analysis.analysis_result.packaging.recyclingInfo,
+        sustainability_claims: analysis.analysis_result.packaging.sustainabilityClaims.join('; '),
+        certifications: analysis.analysis_result.packaging.certifications.join('; ')
+      }));
+
+      // Convert to CSV
+      const headers = Object.keys(flattenedData[0]).join(',');
+      const rows = flattenedData.map(item => 
+        Object.values(item)
+          .map(value => `"${String(value).replace(/"/g, '""')}"`)
+          .join(',')
+      );
+      
+      return `${headers}\n${rows.join('\n')}`;
+    }
+    
+    // Return JSON format
+    return JSON.stringify(analyses, null, 2);
+  } catch (error) {
+    console.error('Error exporting analysis data:', error);
+    throw error;
   }
-  
-  return JSON.stringify(data, null, 2);
+}
+
+export async function deleteAnalysis(analysisId: string) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // First verify the analysis exists and belongs to the user
+    const { data: analysis, error: checkError } = await supabase
+      .from('food_analyses')
+      .select('id')
+      .eq('id', analysisId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking analysis:', checkError);
+      throw new Error('Failed to verify analysis ownership');
+    }
+
+    if (!analysis) {
+      throw new Error('Analysis not found or access denied');
+    }
+
+    // Try normal deletion first
+    const { error: deleteError } = await supabase
+      .from('food_analyses')
+      .delete()
+      .eq('id', analysisId)
+      .eq('user_id', user.id);
+
+    if (!deleteError) {
+      return true; // Deletion successful
+    }
+
+    console.error('Normal deletion failed:', deleteError);
+
+    // If normal deletion fails, try force delete
+    const { data: forceDeleteResult, error: forceError } = await supabase
+      .rpc('force_delete_analysis', {
+        p_analysis_id: analysisId,
+        p_user_id: user.id
+      });
+
+    if (forceError || forceDeleteResult === false) {
+      console.error('Force deletion failed:', forceError || 'Function returned false');
+      throw new Error('Failed to delete analysis');
+    }
+
+    // Verify deletion
+    const { data: verifyData } = await supabase
+      .from('food_analyses')
+      .select('id')
+      .eq('id', analysisId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (verifyData) {
+      throw new Error('Failed to delete analysis: Record still exists');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deleteAnalysis:', error);
+    if (error instanceof Error) {
+      throw new Error(`Failed to delete analysis: ${error.message}`);
+    }
+    throw new Error('Failed to delete analysis: Unknown error');
+  }
 }

@@ -226,407 +226,432 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       <ScrollProgress />
-      <Header onGetStarted={handleGetStarted} />
+      <Header onGetStarted={handleGetStarted} isLanding={true} />
       <main>
-      {/* Hero Section */}
-      <section className="relative h-screen flex items-center geometric-pattern pt-[70px]">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-transparent" />
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center relative">
-          <div className="md:w-1/2 space-y-6 animate-slide-up">
-            <h1 className="text-4xl md:text-6xl font-bold leading-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-              Decode Your Food.
-              <br />
-              Empower Your Choices.
-            </h1>
-            <p className="text-xl text-gray-600">
-              Instant food analysis powered by AI - scan, learn, and make healthier choices in seconds
-            </p>
-            <div className="space-x-4">
-              <button onClick={handleGetStarted} className="btn-primary">Get Started</button>
-              <button className="btn-secondary">Learn More</button>
-            </div>
-            <div className="flex space-x-4 mt-8">
-              <img
-                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=120"
-                alt="App Store"
-                className="h-12 w-auto hover:scale-105 transition-transform duration-300"
-              />
-              <img
-                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=120"
-                alt="Google Play"
-                className="h-12 w-auto hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-          </div>
-          <div className="md:w-1/2 mt-12 md:mt-0">
-            <div className="floating">
-              <img
-                src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=500"
-                alt="NutriDecode+ App"
-                className="w-full max-w-md mx-auto rounded-3xl shadow-2xl"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="flex items-center justify-center space-x-4 p-6 rounded-xl bg-neutral-light">
-                <div className="p-3 rounded-full bg-primary/10">{stat.icon}</div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                  <div className="text-gray-600">{stat.label}</div>
-                </div>
+        {/* Hero Section */}
+        <section className="relative h-screen flex items-center geometric-pattern pt-[70px]">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-transparent" />
+          <div className="container mx-auto px-4 flex flex-col md:flex-row items-center relative">
+            <div className="md:w-1/2 space-y-6 animate-slide-up">
+              <h1 className="text-4xl md:text-6xl font-bold leading-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                Decode Your Food.
+                <br />
+                Empower Your Choices.
+              </h1>
+              <p className="text-xl text-gray-600">
+                Instant food analysis powered by AI - scan, learn, and make healthier choices in seconds
+              </p>
+              <div className="space-x-4">
+                <button onClick={handleGetStarted} className="btn-primary">Get Started</button>
+                <button className="btn-secondary">Learn More</button>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section id="features" className="section-padding bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="section-title">Powerful Features for Healthy Living</h2>
-          <p className="section-subtitle">
-            Discover how NutriDecode+ transforms your food choices with cutting-edge technology
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <div key={index} className="feature-card">
-                <div className="hero-image">
-                  <img src={feature.image} alt={feature.title} />
-                </div>
-                <div className="icon-container">
-                  {feature.icon}
-                </div>
-                <div className="content">
-                  <h3 className="title">{feature.title}</h3>
-                  <p className="description">{feature.description}</p>
-                  <div className="stats">
-                    {Object.entries(feature.stats).map(([key, value], i) => (
-                      <div key={key} className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-500 capitalize">{key}:</span>
-                        <span className="text-sm font-semibold text-primary">{value}</span>
-                        {i < Object.entries(feature.stats).length - 1 && (
-                          <span className="text-gray-300">|</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="flex space-x-4 mt-8">
+                <img
+                  src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=120"
+                  alt="App Store"
+                  className="h-12 w-auto hover:scale-105 transition-transform duration-300"
+                />
+                <img
+                  src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=120"
+                  alt="Google Play"
+                  className="h-12 w-auto hover:scale-105 transition-transform duration-300"
+                />
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Process Flow */}
-      <section id="how-it-works" className="section-padding bg-neutral-light relative overflow-hidden">
-        <div className="container mx-auto px-4">
-          <h2 className="section-title">Your Journey to Better Health</h2>
-          <p className="section-subtitle">
-            Experience the future of food intelligence in three simple steps
-          </p>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
-            {steps.map((step, index) => (
-              <div key={index} className="step-card group">
-                <div className="step-number">
-                  <span>{step.number}</span>
-                </div>
-                <div className="step-image">
-                  <img src={step.image} alt={step.title} />
-                  <div className="step-icon">
-                    {step.icon}
-                  </div>
-                </div>
-                <div className="step-content">
-                  <h3 className="step-title">{step.title}</h3>
-                  <p className="step-description">{step.description}</p>
-                  <div className="step-achievement">
-                    <Check className="w-5 h-5 text-primary" />
-                    <span>{step.achievement}</span>
-                  </div>
-                  <div className="step-stats">
-                    {Object.entries(step.stats).map(([key, value], i) => (
-                      <div key={key} className="stat-item">
-                        <span className="stat-label">{key}</span>
-                        <span className="stat-value">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {index < steps.length - 1 && (
-                  <div className="step-connector">
-                    <ArrowRight className="w-6 h-6 text-primary/30" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="section-padding bg-white">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold">
-                Why Choose NutriDecode+?
-              </h2>
-              <ul className="space-y-4">
-                {benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-center space-x-3">
-                    <div className="p-2 rounded-full bg-primary/10">
-                      <Check className="w-5 h-5 text-primary" />
-                    </div>
-                    <span className="text-gray-700">{benefit}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
             <div className="md:w-1/2 mt-12 md:mt-0">
-              <img
-                src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=500"
-                alt="App Demo"
-                className="w-full rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="section-padding bg-neutral-light">
-        <div className="container mx-auto px-4">
-          <h2 className="section-title">What Our Users Say</h2>
-          <p className="section-subtitle">
-            Join thousands of satisfied users making healthier choices every day
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="testimonial-card">
-                <div className="flex items-center space-x-4">
-                  <img
-                    src={testimonial.image}
-                    alt={testimonial.name}
-                    className="w-16 h-16 rounded-full ring-2 ring-primary/20"
-                  />
-                  <div>
-                    <h3 className="font-bold">{testimonial.name}</h3>
-                    <p className="text-gray-600">{testimonial.role}</p>
-                  </div>
-                </div>
-                <p className="mt-4 text-gray-700 italic">{testimonial.quote}</p>
-                <div className="flex mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Interactive Demo */}
-      <section className="section-padding bg-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="section-title">See It In Action</h2>
-          <p className="section-subtitle">
-            Watch how NutriDecode+ transforms your shopping experience
-          </p>
-          <div className="relative max-w-4xl mx-auto">
-            <div className="aspect-w-16 aspect-h-9 bg-neutral-light rounded-2xl overflow-hidden group">
-              <button className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors duration-300">
-                <div className="w-20 h-20 flex items-center justify-center rounded-full bg-white/90 group-hover:bg-white transition-colors duration-300">
-                  <Play className="w-8 h-8 text-primary ml-1" />
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="section-padding bg-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-neutral-light/50 to-transparent" />
-        <div className="container mx-auto px-4 relative">
-          <h2 className="section-title">Simple, Transparent Pricing</h2>
-          <p className="section-subtitle">
-            Choose the perfect plan for your healthy lifestyle
-          </p>
-
-          {/* Pricing Toggle */}
-          <div className="flex justify-center items-center space-x-4 mb-12">
-            <span className={`text-sm font-medium ${!isYearly ? 'text-primary' : 'text-gray-500'}`}>
-              Monthly
-            </span>
-            <button
-              onClick={() => setIsYearly(!isYearly)}
-              className="relative w-14 h-7 bg-primary/20 rounded-full p-1 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <div
-                className={`w-5 h-5 bg-primary rounded-full transition-transform duration-300 transform ${
-                  isYearly ? 'translate-x-7' : 'translate-x-0'
-                }`}
-              />
-            </button>
-            <span className={`text-sm font-medium ${isYearly ? 'text-primary' : 'text-gray-500'}`}>
-              Yearly <span className="text-xs text-secondary">(Save 20%)</span>
-            </span>
-          </div>
-
-          {/* Pricing Cards */}
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {pricingTiers.map((tier, index) => (
-              <div
-                key={index}
-                className={`pricing-card group ${tier.popular ? 'popular' : ''}`}
-              >
-                {tier.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <div className="bg-secondary text-white text-sm font-semibold px-4 py-1 rounded-full shadow-lg">
-                      Most Popular
-                    </div>
-                  </div>
-                )}
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold mb-2">{tier.name}</h3>
-                  <p className="text-gray-600">{tier.description}</p>
-                </div>
-                <div className="text-center mb-8">
-                  <div className="flex items-center justify-center">
-                    <span className="text-4xl font-bold">$</span>
-                    <span className="text-6xl font-bold">
-                      {isYearly ? tier.yearlyPrice : tier.monthlyPrice}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 mt-2">
-                    {isYearly ? 'per year' : 'per month'}
-                  </p>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  {tier.features.map((feature, i) => (
-                    <li key={i} className="flex items-center space-x-3">
-                      <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                      <span className="text-gray-600">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <button className={`w-full btn-${tier.popular ? 'primary' : 'secondary'}`}>
-                  {tier.cta}
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Trust Indicators */}
-          <div className="mt-16 text-center">
-            <div className="flex items-center justify-center space-x-8 mb-8">
-              <div className="flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-primary" />
-                <span className="text-sm text-gray-600">30-day money back</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CreditCard className="w-5 h-5 text-primary" />
-                <span className="text-sm text-gray-600">Secure payment</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Zap className="w-5 h-5 text-primary" />
-                <span className="text-sm text-gray-600">Instant access</span>
-              </div>
-            </div>
-            <div className="flex justify-center items-center space-x-6">
-              {paymentMethods.map((method, index) => (
+              <div className="floating">
                 <img
-                  key={index}
-                  src={method.icon}
-                  alt={method.name}
-                  className="h-8 w-auto grayscale opacity-50 hover:opacity-100 transition-opacity duration-300"
+                  src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=500"
+                  alt="NutriDecode+ App"
+                  className="w-full max-w-md mx-auto rounded-3xl shadow-2xl"
                 />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats Section */}
+        <section className="py-12 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {stats.map((stat, index) => (
+                <div key={index} className="flex items-center justify-center space-x-4 p-6 rounded-xl bg-neutral-light">
+                  <div className="p-3 rounded-full bg-primary/10">{stat.icon}</div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+                    <div className="text-gray-600">{stat.label}</div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Final CTA */}
-      <section className="section-padding relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary opacity-90" />
-        <div className="container mx-auto px-4 text-center relative">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
-            Your food, decoded in seconds
-          </h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto text-white/90">
-            Join millions of users making healthier food choices with NutriDecode+
-          </p>
-          <button onClick={handleGetStarted} className="btn-primary bg-white text-primary hover:bg-white/90 transform hover:scale-105 transition-all duration-300">
-            Get Started Now
-          </button>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section id="faq" className="section-padding bg-neutral-light">
-        <div className="container mx-auto px-4">
-          <h2 className="section-title">Frequently Asked Questions</h2>
-          <p className="section-subtitle">
-            Find answers to common questions about NutriDecode+
-          </p>
-          <div className="max-w-3xl mx-auto space-y-4">
-            {faqs.map((faq, index) => (
-              <div
-                key={index}
-                className="faq-item bg-white rounded-lg overflow-hidden transition-all duration-300 hover:shadow-md"
-              >
-                <button
-                  onClick={() => toggleFaq(index)}
-                  className="w-full flex items-center justify-between p-6 text-left focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                  <span className="text-xl font-semibold text-gray-900">
-                    {faq.question}
-                  </span>
-                  <div className="flex-shrink-0 ml-4">
-                    {openFaqs.includes(index) ? (
-                      <Minus className="w-6 h-6 text-primary transition-transform duration-300" />
-                    ) : (
-                      <Plus className="w-6 h-6 text-primary transition-transform duration-300" />
-                    )}
+        {/* Features Section */}
+        <section id="features" className="py-20 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark">
+                Powerful Features
+              </h2>
+              <p className="mt-4 text-xl text-gray-600">
+                Everything you need to make informed food choices
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {features.map((feature, index) => (
+                <div key={index} className="feature-card">
+                  <div className="hero-image">
+                    <img src={feature.image} alt={feature.title} />
                   </div>
-                </button>
-                <div
-                  className={`transition-all duration-300 ease-in-out ${
-                    openFaqs.includes(index)
-                      ? 'max-h-96 opacity-100'
-                      : 'max-h-0 opacity-0'
-                  }`}
-                >
-                  <div className="p-6 pt-0 text-gray-600 leading-relaxed">
-                    {faq.answer}
+                  <div className="icon-container">
+                    {feature.icon}
+                  </div>
+                  <div className="content">
+                    <h3 className="title">{feature.title}</h3>
+                    <p className="description">{feature.description}</p>
+                    <div className="stats">
+                      {Object.entries(feature.stats).map(([key, value], i) => (
+                        <div key={key} className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-500 capitalize">{key}:</span>
+                          <span className="text-sm font-semibold text-primary">{value}</span>
+                          {i < Object.entries(feature.stats).length - 1 && (
+                            <span className="text-gray-300">|</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Floating CTA */}
-      {isScrolled && (
-        <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
-          <button onClick={handleGetStarted} className="btn-primary flex items-center space-x-2 shadow-lg">
-            <span>Get Started</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+        {/* How It Works Section */}
+        <section id="how-it-works" className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark">
+                How It Works
+              </h2>
+              <p className="mt-4 text-xl text-gray-600">
+                Three simple steps to healthier choices
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {steps.map((step, index) => (
+                <div key={index} className="step-card group">
+                  <div className="step-number">
+                    <span>{step.number}</span>
+                  </div>
+                  <div className="step-image">
+                    <img src={step.image} alt={step.title} />
+                    <div className="step-icon">
+                      {step.icon}
+                    </div>
+                  </div>
+                  <div className="step-content">
+                    <h3 className="step-title">{step.title}</h3>
+                    <p className="step-description">{step.description}</p>
+                    <div className="step-achievement">
+                      <Check className="w-5 h-5 text-primary" />
+                      <span>{step.achievement}</span>
+                    </div>
+                    <div className="step-stats">
+                      {Object.entries(step.stats).map(([key, value], i) => (
+                        <div key={key} className="stat-item">
+                          <span className="stat-label">{key}</span>
+                          <span className="stat-value">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className="step-connector">
+                      <ArrowRight className="w-6 h-6 text-primary/30" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Benefits Section */}
+        <section className="section-padding bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row items-center">
+              <div className="md:w-1/2 space-y-6">
+                <h2 className="text-3xl md:text-4xl font-bold">
+                  Why Choose NutriDecode+?
+                </h2>
+                <ul className="space-y-4">
+                  {benefits.map((benefit, index) => (
+                    <li key={index} className="flex items-center space-x-3">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <Check className="w-5 h-5 text-primary" />
+                      </div>
+                      <span className="text-gray-700">{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="md:w-1/2 mt-12 md:mt-0">
+                <img
+                  src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=500"
+                  alt="App Demo"
+                  className="w-full rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section id="testimonials" className="py-20 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark">
+                What Our Users Say
+              </h2>
+              <p className="mt-4 text-xl text-gray-600">
+                Join thousands of satisfied users making healthier choices
+              </p>
+            </div>
+            <div className="max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {testimonials.map((testimonial, index) => (
+                  <div key={index} className="testimonial-card">
+                    <div className="flex items-center space-x-4">
+                      <img
+                        src={testimonial.image}
+                        alt={testimonial.name}
+                        className="w-16 h-16 rounded-full ring-2 ring-primary/20"
+                      />
+                      <div>
+                        <h3 className="font-bold">{testimonial.name}</h3>
+                        <p className="text-gray-600">{testimonial.role}</p>
+                      </div>
+                    </div>
+                    <p className="mt-4 text-gray-700 italic">{testimonial.quote}</p>
+                    <div className="flex mt-4">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Interactive Demo */}
+        <section className="section-padding bg-white">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="section-title">See It In Action</h2>
+            <p className="section-subtitle">
+              Watch how NutriDecode+ transforms your shopping experience
+            </p>
+            <div className="relative max-w-4xl mx-auto">
+              <div className="aspect-w-16 aspect-h-9 bg-neutral-light rounded-2xl overflow-hidden group">
+                <button className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors duration-300">
+                  <div className="w-20 h-20 flex items-center justify-center rounded-full bg-white/90 group-hover:bg-white transition-colors duration-300">
+                    <Play className="w-8 h-8 text-primary ml-1" />
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark">
+                Simple Pricing
+              </h2>
+              <p className="mt-4 text-xl text-gray-600">
+                Choose the plan that's right for you
+              </p>
+            </div>
+            <div className="flex justify-center mb-8">
+              <div className="flex items-center space-x-4 bg-gray-100 p-1 rounded-full">
+                <button
+                  onClick={() => setIsYearly(false)}
+                  className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                    !isYearly
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-gray-600 hover:text-primary'
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setIsYearly(true)}
+                  className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                    isYearly
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-gray-600 hover:text-primary'
+                  }`}
+                >
+                  Yearly
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              {pricingTiers.map((tier, index) => (
+                <div
+                  key={index}
+                  className={`pricing-card group ${tier.popular ? 'popular' : ''}`}
+                >
+                  {tier.popular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <div className="bg-secondary text-white text-sm font-semibold px-4 py-1 rounded-full shadow-lg">
+                        Most Popular
+                      </div>
+                    </div>
+                  )}
+                  <div className="text-center mb-8">
+                    <h3 className="text-2xl font-bold mb-2">{tier.name}</h3>
+                    <p className="text-gray-600">{tier.description}</p>
+                  </div>
+                  <div className="text-center mb-8">
+                    <div className="flex items-center justify-center">
+                      <span className="text-4xl font-bold">$</span>
+                      <span className="text-6xl font-bold">
+                        {isYearly ? tier.yearlyPrice : tier.monthlyPrice}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 mt-2">
+                      {isYearly ? 'per year' : 'per month'}
+                    </p>
+                  </div>
+                  <ul className="space-y-4 mb-8">
+                    {tier.features.map((feature, i) => (
+                      <li key={i} className="flex items-center space-x-3">
+                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                        <span className="text-gray-600">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button className={`w-full btn-${tier.popular ? 'primary' : 'secondary'}`}>
+                    {tier.cta}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Trust Indicators */}
+            <div className="mt-16 text-center">
+              <div className="flex items-center justify-center space-x-8 mb-8">
+                <div className="flex items-center space-x-2">
+                  <Shield className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-gray-600">30-day money back</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CreditCard className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-gray-600">Secure payment</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Zap className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-gray-600">Instant access</span>
+                </div>
+              </div>
+              <div className="flex justify-center items-center space-x-6">
+                {paymentMethods.map((method, index) => (
+                  <img
+                    key={index}
+                    src={method.icon}
+                    alt={method.name}
+                    className="h-8 w-auto grayscale opacity-50 hover:opacity-100 transition-opacity duration-300"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section id="faq" className="py-20 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark">
+                Frequently Asked Questions
+              </h2>
+              <p className="mt-4 text-xl text-gray-600">
+                Find answers to common questions about NutriDecode+
+              </p>
+            </div>
+            <div className="max-w-3xl mx-auto space-y-4">
+              {faqs.map((faq, index) => (
+                <div
+                  key={index}
+                  className="faq-item bg-white rounded-lg overflow-hidden transition-all duration-300 hover:shadow-md"
+                >
+                  <button
+                    onClick={() => toggleFaq(index)}
+                    className="w-full flex items-center justify-between p-6 text-left focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  >
+                    <span className="text-xl font-semibold text-gray-900">
+                      {faq.question}
+                    </span>
+                    <div className="flex-shrink-0 ml-4">
+                      {openFaqs.includes(index) ? (
+                        <Minus className="w-6 h-6 text-primary transition-transform duration-300" />
+                      ) : (
+                        <Plus className="w-6 h-6 text-primary transition-transform duration-300" />
+                      )}
+                    </div>
+                  </button>
+                  <div
+                    className={`transition-all duration-300 ease-in-out ${
+                      openFaqs.includes(index)
+                        ? 'max-h-96 opacity-100'
+                        : 'max-h-0 opacity-0'
+                    }`}
+                  >
+                    <div className="p-6 pt-0 text-gray-600 leading-relaxed">
+                      {faq.answer}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="section-padding relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary opacity-90" />
+          <div className="container mx-auto px-4 text-center relative">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
+              Your food, decoded in seconds
+            </h2>
+            <p className="text-xl mb-8 max-w-2xl mx-auto text-white/90">
+              Join millions of users making healthier food choices with NutriDecode+
+            </p>
+            <button onClick={handleGetStarted} className="btn-primary bg-white text-primary hover:bg-white/90 transform hover:scale-105 transition-all duration-300">
+              Get Started Now
+            </button>
+          </div>
+        </section>
+
+        {/* Floating CTA */}
+        {isScrolled && (
+          <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
+            <button onClick={handleGetStarted} className="btn-primary flex items-center space-x-2 shadow-lg">
+              <span>Get Started</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </main>
       <Footer />
     </div>
   );
-}; 
+};
+
+export default LandingPage; 

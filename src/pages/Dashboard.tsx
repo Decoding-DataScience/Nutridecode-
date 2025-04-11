@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAnalysisHistory } from '../services/supabase';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import ScrollProgress from '../components/ScrollProgress';
-import { LogOut, User as UserIcon, Bell, Settings, Clock } from 'lucide-react';
+import { User as UserIcon, Bell, Clock } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 interface FoodAnalysis {
   id: string;
@@ -35,6 +34,7 @@ const Dashboard = () => {
   const [recentActivity, setRecentActivity] = useState<FoodAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     fetchRecentActivity();
@@ -86,6 +86,9 @@ const Dashboard = () => {
   };
 
   const handleViewDetails = (item: FoodAnalysis) => {
+    // Transform the analysis result to match the expected format
+    const analysisResult = item.analysis_result || {};
+    
     navigate('/results', {
       state: {
         analysis: {
@@ -101,14 +104,31 @@ const Dashboard = () => {
             declared: item.declared_allergens || [],
             mayContain: item.may_contain_allergens || []
           },
-          nutritionalInfo: item.nutritional_info || {},
-          healthScore: item.health_score,
+          nutritionalInfo: {
+            perServing: item.nutritional_info?.perServing || {
+              calories: 0,
+              protein: 0,
+              carbs: 0,
+              sugar: 0,
+              fats: { total: 0 }
+            }
+          },
+          healthScore: item.health_score || 0,
           healthClaims: item.health_claims || [],
           packaging: {
             materials: item.packaging_materials || [],
             recyclingInfo: item.recycling_info || '',
             sustainabilityClaims: item.sustainability_claims || [],
             certifications: item.certifications || []
+          },
+          storage: analysisResult.storage || {
+            instructions: [],
+            bestBefore: null
+          },
+          manufacturer: analysisResult.manufacturer || {
+            name: '',
+            address: '',
+            contact: null
           }
         },
         imageUrl: item.image_url
@@ -124,8 +144,8 @@ const Dashboard = () => {
       <header className="fixed top-0 left-0 w-full bg-white shadow-sm z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-8">
-            <Link to="/dashboard" className="text-2xl font-bold text-primary">
-              NutriDecode+
+            <Link to="/dashboard" className="flex items-center">
+              <img src={logo} alt="NutriDecode+" className="h-8 w-auto" />
             </Link>
             <nav className="hidden md:flex space-x-6">
               <Link to="/dashboard" className={`text-gray-600 hover:text-primary ${location.pathname === '/dashboard' ? 'text-primary' : ''}`}>Overview</Link>
@@ -274,8 +294,6 @@ const Dashboard = () => {
           </div>
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 };

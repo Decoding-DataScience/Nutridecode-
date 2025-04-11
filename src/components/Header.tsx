@@ -1,69 +1,43 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, Settings } from 'lucide-react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Menu, X, Settings, History, Home, Scan } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import logo from '../assets/logo.png';
 
 interface HeaderProps {
   onGetStarted?: () => void;
+  isLanding?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ onGetStarted }) => {
+const Header = ({ onGetStarted, isLanding = false }: HeaderProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const location = useLocation();
+
+  const navigationItems = [
+    { name: 'Features', href: '#features' },
+    { name: 'How It Works', href: '#how-it-works' },
+    { name: 'Testimonials', href: '#testimonials' },
+    { name: 'Pricing', href: '#pricing' },
+    { name: 'FAQ', href: '#faq' },
+  ];
+
+  const appNavigationItems = [
+    { name: 'Overview', href: '/dashboard', icon: <Home className="w-5 h-5" /> },
+    { name: 'Analyze', href: '/scan', icon: <Scan className="w-5 h-5" /> },
+    { name: 'History', href: '/history', icon: <History className="w-5 h-5" /> },
+    { name: 'Settings', href: '/preferences', icon: <Settings className="w-5 h-5" /> },
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      setIsScrolled(window.scrollY > 20);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Handle click outside mobile menu
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-
-    if (isMobileMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isMobileMenuOpen]);
-
-  // Handle smooth scrolling for anchor links
-  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (href.startsWith('#')) {
-      e.preventDefault();
-      const element = document.querySelector(href);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-        setIsMobileMenuOpen(false);
-      }
-    }
-  };
-
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
-
-  const isLandingPage = location.pathname === '/';
-
-  const handleGetStarted = () => {
-    if (onGetStarted) {
-      onGetStarted();
-    }
-  };
 
   const handleSignOut = async () => {
     try {
@@ -74,206 +48,194 @@ const Header: React.FC<HeaderProps> = ({ onGetStarted }) => {
     }
   };
 
-  const navItems = isLandingPage
-    ? [
-        { label: 'Features', href: '#features' },
-        { label: 'How it Works', href: '#how-it-works' },
-        { label: 'Pricing', href: '#pricing' },
-      ]
-    : [
-        { label: 'Overview', href: '/dashboard' },
-        { label: 'Analysis', href: '/scan' },
-        { label: 'History', href: '/history' },
-      ];
+  const scrollToSection = (sectionId: string) => {
+    setIsMobileMenuOpen(false);
+    if (!sectionId.startsWith('#')) {
+      navigate(sectionId);
+      return;
+    }
+    
+    const element = document.querySelector(sectionId);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  };
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? 'shadow-md' : ''
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? 'bg-white shadow-lg' : 'bg-white/95'
       }`}
-      style={{
-        background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.96))',
-        height: isScrolled ? '60px' : '70px',
-      }}
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-[5%] h-full">
-        <nav className="flex items-center justify-between h-full">
+      <nav className="container mx-auto px-4">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <Link
-            to="/"
-            className="text-[#2A3342] text-2xl font-semibold"
-            aria-label="NutriDecode+ Home"
-          >
-            NutriDecode+
-          </Link>
+          <div className="flex-shrink-0 flex items-center">
+            <img 
+              src={logo} 
+              alt="NutriDecode+" 
+              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => navigate('/')}
+            />
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {user ? (
-              // Authenticated navigation
-              <>
-                {navItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.href}
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      isActive(item.href)
-                        ? 'border-green-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-                <Link
-                  to="/preferences"
-                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                    isActive('/preferences')
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+            {isLanding ? (
+              // Landing page navigation
+              navigationItems.map((item) => (
+                <button
+                  key={item.name}
+                  onClick={() => scrollToSection(item.href)}
+                  className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+                >
+                  {item.name}
+                </button>
+              ))
+            ) : (
+              // App navigation
+              user && appNavigationItems.map((item) => (
+                <button
+                  key={item.name}
+                  onClick={() => scrollToSection(item.href)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                    location.pathname === item.href
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-gray-700 hover:text-primary hover:bg-gray-50'
                   }`}
                 >
-                  <Settings className="w-5 h-5 mr-1" />
-                  <span>Settings</span>
-                </Link>
+                  {item.icon}
+                  <span>{item.name}</span>
+                </button>
+              ))
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-700">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-primary-dark flex items-center justify-center text-white font-medium">
+                    {user.email?.[0].toUpperCase()}
+                  </div>
+                  <span className="text-sm">{user.email}</span>
+                </div>
                 <button
                   onClick={handleSignOut}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                  className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
                 >
                   Sign Out
                 </button>
-              </>
-            ) : isLandingPage ? (
-              // Landing page navigation
+              </div>
+            ) : (
               <>
-                {navItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.href}
-                    className="text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200 hover:underline decoration-2 underline-offset-4"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
                 <button
-                  onClick={handleGetStarted}
-                  className="bg-[#4F46E5] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#4338CA] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4F46E5]"
-                  aria-label="Get Started"
+                  onClick={() => navigate('/auth')}
+                  className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={onGetStarted}
+                  className="px-4 py-2 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-medium hover:shadow-lg transition-all transform hover:scale-105"
                 >
                   Get Started
                 </button>
               </>
-            ) : (
-              // Unauthenticated user button
-              <Link
-                to="/auth"
-                className="bg-[#4F46E5] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#4338CA] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4F46E5]"
-                aria-label="Sign In"
-              >
-                Sign In
-              </Link>
             )}
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="mobile-menu"
-          >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </nav>
-
-        {/* Mobile Navigation */}
-        <div
-          ref={mobileMenuRef}
-          id="mobile-menu"
-          className={`md:hidden fixed inset-x-0 top-[60px] bg-white transition-transform duration-300 ease-in-out ${
-            isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
-          }`}
-          role="menu"
-          aria-hidden={!isMobileMenuOpen}
-        >
-          <div className="px-4 py-6 space-y-4">
-            {user ? (
-              // Authenticated mobile navigation
-              <>
-                {navItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.href}
-                    className={`block text-gray-700 hover:text-gray-900 font-medium py-2 ${
-                      isActive(item.href) ? 'text-green-600' : ''
-                    }`}
-                    role="menuitem"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-                <Link
-                  to="/preferences"
-                  className={`block text-gray-700 hover:text-gray-900 font-medium py-2 ${
-                    isActive('/preferences') ? 'text-green-600' : ''
-                  }`}
-                  role="menuitem"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Settings
-                </Link>
-                <button
-                  onClick={() => {
-                    handleSignOut();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full text-left text-red-600 font-medium py-2"
-                  role="menuitem"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : isLandingPage ? (
-              // Landing page mobile navigation
-              <>
-                {navItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.href}
-                    className="block text-gray-700 hover:text-gray-900 font-medium py-2"
-                    role="menuitem"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-                <button
-                  onClick={() => {
-                    handleGetStarted();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full bg-[#4F46E5] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#4338CA] transition-colors duration-200"
-                  role="menuitem"
-                >
-                  Get Started
-                </button>
-              </>
-            ) : (
-              // Unauthenticated mobile navigation
-              <Link
-                to="/auth"
-                className="block text-center bg-[#4F46E5] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#4338CA] transition-colors duration-200"
-                role="menuitem"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Sign In
-              </Link>
-            )}
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 rounded-lg text-gray-700"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
           </div>
         </div>
-      </div>
+
+        {/* Mobile Navigation */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden fixed inset-x-0 top-20 bg-white border-t border-gray-100 shadow-lg">
+            <div className="px-4 py-2">
+              {user ? (
+                <>
+                  <div className="flex items-center space-x-3 px-4 py-3 border-b border-gray-100">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-primary-dark flex items-center justify-center text-white font-medium">
+                      {user.email?.[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="py-2 space-y-1">
+                    {isLanding ? navigationItems.map((item) => (
+                      <button
+                        key={item.name}
+                        onClick={() => scrollToSection(item.href)}
+                        className="w-full flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                      >
+                        <span>{item.name}</span>
+                      </button>
+                    )) : appNavigationItems.map((item) => (
+                      <button
+                        key={item.name}
+                        onClick={() => scrollToSection(item.href)}
+                        className={`w-full flex items-center space-x-2 px-4 py-2 rounded-lg ${
+                          location.pathname === item.href
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {item.icon}
+                        <span>{item.name}</span>
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => {
+                        handleSignOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-gray-50 rounded-lg"
+                    >
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2 p-4">
+                  {isLanding && navigationItems.map((item) => (
+                    <button
+                      key={item.name}
+                      onClick={() => scrollToSection(item.href)}
+                      className="w-full flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                    >
+                      <span>{item.name}</span>
+                    </button>
+                  ))}
+                  <Link
+                    to="/auth"
+                    className="block w-full text-center bg-gradient-to-r from-primary to-primary-dark text-white px-6 py-3 rounded-lg font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </nav>
     </header>
   );
 };

@@ -1,4 +1,7 @@
-import { supabase } from '../lib/supabase';
+import { supabase, initializeDatabase } from './supabase';
+
+let isInitialized = false;
+let initializationPromise: Promise<void> | null = null;
 
 export interface UserPreferences {
   id: string;
@@ -56,102 +59,165 @@ export const defaultPreferences: Partial<UserPreferences> = {
   }
 };
 
+async function ensureInitialized() {
+  if (isInitialized) return;
+
+  if (!initializationPromise) {
+    initializationPromise = (async () => {
+      try {
+        await initializeDatabase();
+        isInitialized = true;
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        throw new Error('Failed to initialize preferences system. Please try again.');
+      } finally {
+        initializationPromise = null;
+      }
+    })();
+  }
+
+  await initializationPromise;
+}
+
 export async function getUserPreferences(): Promise<UserPreferences | null> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    await ensureInitialized();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error('Auth error in getUserPreferences:', authError);
+      throw new Error('Authentication error: Please sign in again');
+    }
     
     if (!user) {
       console.log('No authenticated user found');
-      return null;
+      throw new Error('Please sign in to access your preferences');
     }
 
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // No preferences found, return default preferences
-        return {
-          ...defaultPreferences,
-          id: 'default',
-          user_id: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        } as UserPreferences;
-      }
-      throw error;
-    }
-
-    return data || {
-      ...defaultPreferences,
-      id: 'default',
-      user_id: user.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    } as UserPreferences;
-  } catch (error) {
-    console.error('Error in getUserPreferences:', error);
-    throw error;
-  }
-}
-
-export async function updateUserPreferences(preferences: Partial<UserPreferences>): Promise<UserPreferences | null> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      throw new Error('No authenticated user found');
-    }
-
-    // First, try to get existing preferences
+    // First check if user has existing preferences
     const { data: existingPrefs, error: fetchError } = await supabase
       .from('user_preferences')
       .select('*')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      throw fetchError;
+    if (fetchError) {
+      console.error('Error fetching preferences:', fetchError);
+      // Check for specific database errors
+      if (fetchError.code === '42P01') {
+        // Table doesn't exist, try to reinitialize
+        isInitialized = false;
+        return await getUserPreferences(); // Retry once
+      }
+      throw new Error(`Failed to fetch preferences: ${fetchError.message}`);
     }
 
-    // Prepare the preferences data
-    const preferencesData = {
+    if (!existingPrefs) {
+      // Create default preferences for new user
+      return await createDefaultPreferences(user.id);
+    }
+
+    return existingPrefs;
+  } catch (error) {
+    console.error('Error in getUserPreferences:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred. Please try again later');
+  }
+}
+
+async function createDefaultPreferences(userId: string): Promise<UserPreferences> {
+  try {
+    const defaultPrefs = {
       ...defaultPreferences,
+      user_id: userId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: newPrefs, error: createError } = await supabase
+      .from('user_preferences')
+      .insert(defaultPrefs)
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Error creating default preferences:', createError);
+      if (createError.code === '23505') {
+        // Handle unique constraint violation
+        const { data: existingPrefs, error: fetchError } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (fetchError) {
+          throw new Error('Failed to fetch existing preferences');
+        }
+
+        return existingPrefs;
+      }
+      throw new Error('Failed to create default preferences. Please try again');
+    }
+
+    if (!newPrefs) {
+      throw new Error('Failed to initialize preferences. Please try again');
+    }
+
+    return newPrefs;
+  } catch (error) {
+    console.error('Error in createDefaultPreferences:', error);
+    throw error;
+  }
+}
+
+export async function updateUserPreferences(preferences: Partial<UserPreferences>): Promise<UserPreferences> {
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      throw new Error('Authentication error');
+    }
+    
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+
+    // Ensure we have the current preferences first
+    const currentPrefs = await getUserPreferences();
+    
+    if (!currentPrefs) {
+      throw new Error('No existing preferences found');
+    }
+
+    // Merge current preferences with updates
+    const updatedPrefs = {
+      ...currentPrefs,
       ...preferences,
       user_id: user.id,
       updated_at: new Date().toISOString()
     };
 
-    if (existingPrefs) {
-      // Update existing preferences
-      const { data, error: updateError } = await supabase
-        .from('user_preferences')
-        .update(preferencesData)
-        .eq('user_id', user.id)
-        .select()
-        .single();
+    // Update the preferences
+    const { data, error: updateError } = await supabase
+      .from('user_preferences')
+      .update(updatedPrefs)
+      .eq('user_id', user.id)
+      .select()
+      .single();
 
-      if (updateError) throw updateError;
-      return data;
-    } else {
-      // Create new preferences
-      const newPreferencesData = {
-        ...preferencesData,
-        created_at: new Date().toISOString()
-      };
-
-      const { data, error: insertError } = await supabase
-        .from('user_preferences')
-        .insert(newPreferencesData)
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      return data;
+    if (updateError) {
+      console.error('Error updating preferences:', updateError);
+      throw new Error('Failed to update preferences');
     }
+
+    if (!data) {
+      throw new Error('No data returned after update');
+    }
+
+    return data;
   } catch (error) {
     console.error('Error in updateUserPreferences:', error);
     throw error;

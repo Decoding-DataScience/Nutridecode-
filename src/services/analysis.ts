@@ -3,10 +3,31 @@ import { getUserPreferences } from './preferences';
 import type { UserPreferences } from './preferences';
 import type { AnalysisResult } from './openai';
 
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+
+if (!OPENAI_API_KEY) {
+  console.error('OpenAI API key is missing. Please check your .env file.');
+}
+
 const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  apiKey: OPENAI_API_KEY,
   dangerouslyAllowBrowser: true
 });
+
+// Verify OpenAI API connection
+export async function verifyOpenAIConnection(): Promise<boolean> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: "Test connection" }],
+      max_tokens: 5
+    });
+    return !!response.choices[0]?.message?.content;
+  } catch (error) {
+    console.error('OpenAI API connection error:', error);
+    return false;
+  }
+}
 
 export interface PreferenceBasedAnalysis extends AnalysisResult {
   preferencesMatch: {
@@ -40,13 +61,24 @@ export async function analyzeWithPreferences(
   preferences?: UserPreferences
 ): Promise<PreferenceBasedAnalysis> {
   try {
+    // Verify API connection first
+    const isConnected = await verifyOpenAIConnection();
+    if (!isConnected) {
+      throw new Error('Unable to connect to OpenAI API. Please check your API key and try again.');
+    }
+
     // If preferences not provided, fetch them
-    if (!preferences) {
-      preferences = await getUserPreferences();
+    let userPreferences = preferences;
+    if (!userPreferences) {
+      const fetchedPrefs = await getUserPreferences();
+      if (!fetchedPrefs) {
+        throw new Error('User preferences not found. Please set up your preferences first.');
+      }
+      userPreferences = fetchedPrefs;
     }
 
     // Create a detailed prompt based on user preferences
-    const prompt = createPreferenceBasedPrompt(analysis, preferences);
+    const prompt = createPreferenceBasedPrompt(analysis, userPreferences);
 
     const response = await openai.chat.completions.create({
       model: "gpt-4",
@@ -65,20 +97,35 @@ export async function analyzeWithPreferences(
       response_format: { type: "json_object" }
     });
 
-    const content = response.choices[0].message.content;
+    const content = response.choices[0]?.message?.content;
     if (!content) {
       throw new Error('Empty response from OpenAI');
     }
 
-    const preferenceAnalysis = JSON.parse(content);
-    
-    return {
-      ...analysis,
-      ...preferenceAnalysis
-    };
+    try {
+      const preferenceAnalysis = JSON.parse(content);
+      return {
+        ...analysis,
+        ...preferenceAnalysis
+      };
+    } catch (parseError) {
+      console.error('Error parsing OpenAI response:', parseError);
+      throw new Error('Failed to parse analysis results. Please try again.');
+    }
   } catch (error) {
     console.error('Error in preference-based analysis:', error);
-    throw error;
+    if (error instanceof Error) {
+      // Handle specific OpenAI API errors
+      if (error.message.includes('API key')) {
+        throw new Error('OpenAI API authentication failed. Please check your API key.');
+      } else if (error.message.includes('rate limit')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      } else if (error.message.includes('billing')) {
+        throw new Error('OpenAI API billing issue. Please check your account.');
+      }
+      throw error;
+    }
+    throw new Error('An unexpected error occurred during analysis. Please try again later.');
   }
 }
 

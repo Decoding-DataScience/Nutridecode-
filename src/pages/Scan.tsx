@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
@@ -11,8 +11,12 @@ import {
   Check,
   AlertCircle,
   Loader2,
+  Scan as ScanIcon,
 } from 'lucide-react';
 import { analyzeFoodLabel, validateImage } from '../services/openai';
+import logo from '../assets/logo.png';
+import { useAuth } from '../contexts/AuthContext';
+import { submitWaitlistEntry } from '../services/supabase';
 
 const Scan = () => {
   const [mode, setMode] = useState<'select' | 'camera' | 'upload' | 'preview' | 'processing'>('select');
@@ -175,34 +179,59 @@ const Scan = () => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-light">
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100">
+      {/* Enhanced Header */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="fixed top-0 left-0 w-full bg-white shadow-sm z-50"
+        className="fixed top-0 left-0 w-full bg-white shadow-md z-50"
       >
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button
-            onClick={() => {
-              stopCamera();
-              navigate('/dashboard');
-            }}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Dashboard</span>
-          </button>
-          <div className="text-sm text-gray-500">
-            {mode === 'camera' && 'Position label in frame'}
-            {mode === 'preview' && 'Review capture'}
-            {mode === 'processing' && 'Analyzing image...'}
+        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => {
+                stopCamera();
+                navigate('/dashboard');
+              }}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back</span>
+            </button>
+            <div className="h-6 w-px bg-gray-200" />
+            <img src={logo} alt="NutriDecode+" className="h-8 w-auto" />
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-primary">
+              <ScanIcon className="w-5 h-5" />
+              <span className="font-medium">Scan Food Label</span>
+            </div>
+            {mode !== 'select' && (
+              <button
+                onClick={resetScan}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
+        {(mode === 'camera' || mode === 'preview' || mode === 'processing') && (
+          <div className="h-1 w-full bg-gray-100">
+            <motion.div
+              className="h-full bg-primary"
+              initial={{ width: '0%' }}
+              animate={{ 
+                width: mode === 'processing' ? '100%' : '0%',
+              }}
+              transition={{ duration: 2 }}
+            />
+          </div>
+        )}
       </motion.header>
 
       {/* Main Content */}
-      <main className="pt-16 pb-8">
+      <main className="pt-24 pb-24">
         <div className="max-w-2xl mx-auto px-4">
           <AnimatePresence mode="wait">
             {error && (
@@ -210,7 +239,7 @@ const Scan = () => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg flex items-center space-x-2"
+                className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg flex items-center space-x-2"
               >
                 <AlertCircle className="w-5 h-5" />
                 <span>{error}</span>
@@ -227,42 +256,53 @@ const Scan = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-lg overflow-hidden"
+              className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100"
             >
               {mode === 'select' && (
-                <div className="p-8 space-y-6">
-                  <h1 className="text-2xl font-bold text-center">Scan Food Label</h1>
-                  <p className="text-gray-600 text-center">
-                    Choose how you'd like to capture the food label
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-8 space-y-8">
+                  <div className="text-center space-y-3">
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
+                      Scan Food Label
+                    </h1>
+                    <p className="text-gray-600">
+                      Choose how you'd like to capture the food label for analysis
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={startCamera}
-                      className="flex flex-col items-center p-6 border-2 border-dashed rounded-xl hover:border-primary hover:bg-primary/5 transition-colors"
+                      className="flex flex-col items-center p-8 border-2 border-dashed rounded-xl hover:border-primary hover:bg-primary/5 transition-all group"
                     >
-                      <Camera className="w-12 h-12 text-primary mb-4" />
-                      <span className="font-medium">Take Photo</span>
-                      <span className="text-sm text-gray-500 mt-2">
-                        Use your device's camera
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                        <Camera className="w-8 h-8 text-primary" />
+                      </div>
+                      <span className="font-medium text-lg">Take Photo</span>
+                      <span className="text-sm text-gray-500 mt-2 text-center">
+                        Use your device's camera to capture the label
                       </span>
                     </motion.button>
 
-                    <div {...getRootProps()}>
-                      <motion.button
+                    <div
+                      {...getRootProps()}
+                      className={`flex flex-col items-center p-8 border-2 border-dashed rounded-xl transition-all cursor-pointer group
+                        ${isDragActive ? 'border-primary bg-primary/5' : 'hover:border-primary hover:bg-primary/5'}`}
+                    >
+                      <motion.div
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className={`flex flex-col items-center p-6 border-2 border-dashed rounded-xl transition-colors w-full
-                          ${isDragActive ? 'border-primary bg-primary/5' : 'hover:border-primary hover:bg-primary/5'}`}
+                        className="w-full h-full flex flex-col items-center"
                       >
                         <input {...getInputProps()} />
-                        <Upload className="w-12 h-12 text-primary mb-4" />
-                        <span className="font-medium">Upload Image</span>
-                        <span className="text-sm text-gray-500 mt-2">
-                          {isDragActive ? 'Drop the file here' : 'Select from your device'}
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                          <Upload className="w-8 h-8 text-primary" />
+                        </div>
+                        <span className="font-medium text-lg">Upload Image</span>
+                        <span className="text-sm text-gray-500 mt-2 text-center">
+                          Select an image from your device
                         </span>
-                      </motion.button>
+                      </motion.div>
                     </div>
                   </div>
                 </div>

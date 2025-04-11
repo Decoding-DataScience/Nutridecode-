@@ -271,3 +271,34 @@ export function validateImage(imageBase64: string): boolean {
     return false;
   }
 }
+
+export async function generateAnalysisSummary(analysis: AnalysisResult): Promise<string> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: "You are a nutrition expert summarizing food product analysis. Create clear, concise summaries that are easy to understand when spoken aloud. Focus on the most important health aspects and any concerns."
+        },
+        {
+          role: "user",
+          content: `Create a concise, conversational summary of this food analysis that would sound natural when spoken:
+          ${JSON.stringify(analysis, null, 2)}`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 500
+    });
+
+    const summary = response.choices[0]?.message?.content;
+    if (!summary) {
+      throw new Error('Failed to generate summary');
+    }
+
+    return summary;
+  } catch (error) {
+    console.error('Error generating analysis summary:', error);
+    throw new Error('Failed to generate analysis summary: ' + (error instanceof Error ? error.message : 'Unknown error'));
+  }
+}
